@@ -1,3 +1,4 @@
+#include <ArduinoJson.h>
 #include <EURK_Arduino.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
@@ -13,7 +14,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 String str_mon[12]={"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 int Year, Month, Day, Hour, Minute, Second; 
-const char* ssid = "hrb-426";
+const char* ssid = "hrb-211";
 const char* password = "";
 WiFiClient client;
 
@@ -29,15 +30,23 @@ void setup () {
   }
   testfillcircle();
   Split(getTime(), ' ');
+  StaticJsonDocument<200> doc;
   time_t baseTime =GetTimeT(Year,Month,Day,Hour,Minute,Second);
+  doc["id"]="1";
+  doc["status"]=true;
+  doc["real_time"]="2020-09-14 10:59:59";
+  doc["start_time"]="2020-09-14 10:59:59";
+  doc["end_time"]="2020-09-14 10:59:59";
+  String output;
+  serializeJson(doc, output);
+  Serial.println(output);
   if(WiFi.status() == WL_CONNECTED)
   {
     HTTPClient http;
-    String ubidots = "http://164.125.219.21:3000/api/test";
+    String ubidots = "http://164.125.219.21:3000/api/arduino/1";
     http.begin(ubidots);
-    String httpRequestData = "id=1&status=true&real_time=2020-09-14 10:59:59&start_time=2020-09-14 10:59:59&end_time=2020-09-14 10:59:59";
-    int httpCode = http.POST(httpRequestData);
-    Serial.print(httpCode);
+    int httpCode = http.PUT(output);
+    Serial.println(httpCode);
     if (httpCode==200) {
       String payload = http.getString();
       char ch[99]={0};
@@ -49,12 +58,7 @@ void setup () {
     }
     http.end();
   }
-  Serial.println(Year);
-  Serial.println(Month);
-  Serial.println(Day);
-  Serial.println(Hour);
-  Serial.println(Minute);
-  Serial.println(Second);
+  Serial.println(baseTime);
   Serial.println(ctime(&baseTime));
 }
 
@@ -126,7 +130,6 @@ void Split(String sData, char cSeparator)
     ++nCount;
   }
 }
-
 void testfillcircle(void) {
   display.clearDisplay();
   for(int16_t i=max(display.width(),display.height())/2; i>0; i-=3) {
