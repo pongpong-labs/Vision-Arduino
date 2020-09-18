@@ -12,9 +12,9 @@ using namespace std;
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-String str_mon[12]={"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+String str_mon[12]={"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}, YStamp="", MStamp="", DStamp="", hmsStamp="";
 int Year, Month, Day, Hour, Minute, Second; 
-const char* ssid = "hrb-211";
+const char* ssid = "hrb-426";
 const char* password = "";
 WiFiClient client;
 
@@ -30,26 +30,43 @@ void setup () {
   }
   testfillcircle();
   Split(getTime(), ' ');
-  StaticJsonDocument<200> doc;
   time_t baseTime =GetTimeT(Year,Month,Day,Hour,Minute,Second);
-  doc["id"]="1";
+  String TimeS=ctime(&baseTime);
+  char temp[30]={0};
+  Serial.println(TimeS);
+  TimeS.toCharArray(temp, TimeS.length()+1);
+  mktimeStamp(ctime(&baseTime), ' ');
+  Serial.println(DStamp.length());
+  if(DStamp.length()==2)
+  {
+    YStamp=String(temp[20])+String(temp[21])+String(temp[22])+String(temp[23]);
+  }
+  else
+  {
+    YStamp=String(temp[19])+String(temp[20])+String(temp[21])+String(temp[22]);
+  }
+  String timeStamp=YStamp+"-"+MStamp+"-"+DStamp+" "+hmsStamp;
+  Serial.println(timeStamp);
+  StaticJsonDocument<200> doc;
+  doc["id"]="6";
   doc["status"]=true;
-  doc["real_time"]="2020-09-14 10:59:59";
-  doc["start_time"]="2020-09-14 10:59:59";
-  doc["end_time"]="2020-09-14 10:59:59";
+  doc["real_time"]=timeStamp;
+  doc["start_time"]=timeStamp;
+  doc["end_time"]=timeStamp;
   String output;
   serializeJson(doc, output);
   Serial.println(output);
   if(WiFi.status() == WL_CONNECTED)
   {
     HTTPClient http;
-    String ubidots = "http://164.125.219.21:3000/api/arduino/1";
+    String ubidots = "http://164.125.219.21:3000/api/arduino";
     http.begin(ubidots);
-    int httpCode = http.PUT(output);
+    http.addHeader("Content-Type", "application/json; charset=utf-8");
+    int httpCode = http.POST(output);
     Serial.println(httpCode);
-    if (httpCode==200) {
+    if (httpCode>0) {
       String payload = http.getString();
-      char ch[99]={0};
+      char ch[200]={0};
       display.clearDisplay();
       payload.toCharArray(ch, payload.length());
       EURK_putsxy(0, 48, ch);
@@ -58,8 +75,6 @@ void setup () {
     }
     http.end();
   }
-  Serial.println(baseTime);
-  Serial.println(ctime(&baseTime));
 }
 
 int GetTimeT(int YY, int MM, int DD, int hh, int mm, int ss) {  
@@ -72,8 +87,6 @@ int GetTimeT(int YY, int MM, int DD, int hh, int mm, int ss) {
     t.tm_sec = ss;
     return mktime(&t);
 }
-
-//출처: https://kimgagakk.tistory.com/493 [김가가의 블로그]
 
 void Split(String sData, char cSeparator)
 {  
@@ -88,7 +101,6 @@ void Split(String sData, char cSeparator)
     if(-1 != nGetIndex)
     {
       sTemp = sCopy.substring(0, nGetIndex);
-      Serial.println( sTemp );
       if(nCount==1)
       {
         sTemp.toCharArray(str_D, sTemp.length()+1);
@@ -124,12 +136,61 @@ void Split(String sData, char cSeparator)
     }
     else
     {
-      Serial.println( sCopy );
       break;
     }
     ++nCount;
   }
 }
+
+void mktimeStamp(String sData, char cSeparator)
+{  
+  int nCount = 0;
+  int nGetIndex = 0;
+  String sTemp = "";
+  String sCopy = sData;
+  while(true)
+  {
+    nGetIndex = sCopy.indexOf(cSeparator);
+    if(-1 != nGetIndex)
+    {
+      sTemp = sCopy.substring(0, nGetIndex);
+      Serial.println(sTemp);
+      if(nCount==2)
+      {
+        DStamp=sTemp;
+      }
+      else if(nCount==1)
+      {
+        for(int i=0 ; i<12 ; i++)
+        {
+          if(str_mon[i]==sTemp)
+          {
+            if(i<10)
+            {
+              MStamp="0"+String(i+1);
+            }
+            else
+            {
+              MStamp=String(i+1);
+            }
+            break;
+          }
+        }
+      }
+      else if(nCount==3)
+      {
+        hmsStamp=sTemp;
+      }
+      sCopy = sCopy.substring(nGetIndex + 1);
+    }
+    else
+    {
+      break;
+    }
+    ++nCount;
+  }
+}
+
 void testfillcircle(void) {
   display.clearDisplay();
   for(int16_t i=max(display.width(),display.height())/2; i>0; i-=3) {
