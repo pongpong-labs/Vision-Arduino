@@ -180,6 +180,50 @@ void loop() {
     {
       state=false;
       digitalWrite(LED_PIN, LOW);
+      Split(getTime(), ' ');
+      time_t baseTime =GetTimeT(Year,Month,Day,Hour,Minute,Second);
+      String TimeS=ctime(&baseTime);
+      char temp[30]={0};
+      Serial.println(TimeS);
+      TimeS.toCharArray(temp, TimeS.length()+1);
+      mktimeStamp(ctime(&baseTime), ' ');
+      Serial.println(DStamp.length());
+      if(DStamp.length()==2)
+      {
+        YStamp=String(temp[20])+String(temp[21])+String(temp[22])+String(temp[23]);
+      }
+      else
+      {
+        YStamp=String(temp[19])+String(temp[20])+String(temp[21])+String(temp[22]);
+      }
+      String timeStamp=YStamp+"-"+MStamp+"-"+DStamp+" "+hmsStamp;
+      endTime=timeStamp;
+      Serial.println(timeStamp);
+      StaticJsonDocument<200> doc;
+      doc["id"]="1";
+      doc["name"]="김해CGV7관";
+      doc["connect_time"]=startTime;
+      doc["disconnect_time"]=endTime;
+      doc["start_time"]=startTime;
+      doc["end_time"]=endTime;
+      doc["status"]=false;
+      String output;
+      serializeJson(doc, output);
+      Serial.println(output);
+      if(WiFi.status() == WL_CONNECTED)
+      {
+        HTTPClient http;
+        String ubidots = "http://164.125.219.21:3000/api/beacon/1";
+        http.begin(ubidots);
+        http.addHeader("Content-Type", "application/json; charset=utf-8");
+        int httpCode = http.PUT(output);
+        Serial.println(httpCode);
+        if (httpCode>0) {
+          String payload = http.getString();
+          Serial.println(payload);
+        }
+        http.end();
+      }
     }
     else
     {
