@@ -49,7 +49,7 @@ void setup () {
   String timeStamp=YStamp+"-"+MStamp+"-"+DStamp+" "+hmsStamp;
   Serial.println(timeStamp);
   StaticJsonDocument<200> doc;
-  doc["id"]="6";
+  doc["id"]="1";
   doc["real_time"]=timeStamp;
   String output;
   serializeJson(doc, output);
