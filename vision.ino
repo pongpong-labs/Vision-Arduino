@@ -50,10 +50,7 @@ void setup () {
   Serial.println(timeStamp);
   StaticJsonDocument<200> doc;
   doc["id"]="6";
-  doc["status"]=true;
   doc["real_time"]=timeStamp;
-  doc["start_time"]=timeStamp;
-  doc["end_time"]=timeStamp;
   String output;
   serializeJson(doc, output);
   Serial.println(output);
