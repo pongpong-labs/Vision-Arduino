@@ -183,6 +183,8 @@ void loop() {
     }
     else
     {
+      state=true;
+      digitalWrite(LED_PIN, HIGH);
       Split(getTime(), ' ');
       time_t baseTime =GetTimeT(Year,Month,Day,Hour,Minute,Second);
       String TimeS=ctime(&baseTime);
@@ -204,7 +206,7 @@ void loop() {
       Serial.println(timeStamp);
       StaticJsonDocument<200> doc;
       doc["id"]="1";
-      doc["name"]="김해CGV7관;
+      doc["name"]="김해CGV7관";
       doc["connect_time"]=startTime;
       doc["disconnect_time"]=startTime;
       doc["start_time"]=startTime;
@@ -227,8 +229,6 @@ void loop() {
         }
         http.end();
       }
-      state=true;
-      digitalWrite(LED_PIN, HIGH);
     }
   }
   lastState = currentState;
