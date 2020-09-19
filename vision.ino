@@ -2,6 +2,7 @@
 #include <EURK_Arduino.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
+#include <Adafruit_SSD1306.h>
 #include <Time.h>
 #include <stdlib.h>
 using namespace std;
@@ -14,8 +15,8 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 String str_mon[12]={"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}, YStamp="", MStamp="", DStamp="", hmsStamp="";
 int Year, Month, Day, Hour, Minute, Second; 
-const char* ssid = "hrb-426";
-const char* password = "";
+const char* ssid = "pongponglabs";
+const char* password = "simple1231";
 WiFiClient client;
 
 void setup () {
@@ -68,6 +69,7 @@ void setup () {
       String payload = http.getString();
       char ch[200]={0};
       display.clearDisplay();
+      display.ssd1306_command (0xA1);
       payload.toCharArray(ch, payload.length());
       EURK_putsxy(0, 48, ch);
       display.display();
