@@ -5,10 +5,10 @@
 #include <Adafruit_SSD1306.h>
 #include <Time.h>
 #include <stdlib.h>
-//#include <SoftwareSerial.h>
+#include <SoftwareSerial.h>
 using namespace std;
 
-//SoftwareSerial HM10(D5,D6); //RX,TX
+SoftwareSerial HM10(D5,D6); //RX,TX
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 #define OLED_RESET -1
@@ -24,7 +24,7 @@ WiFiClient client;
 void setup () {
   Serial.begin(115200);
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-  /*WiFi.begin(ssid, password);
+  WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.println("Connecting...");
@@ -32,10 +32,10 @@ void setup () {
   Serial.println("Connected!");
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
     return;
-  }*/
+  }
   testfillcircle();
   delay(6000);
-  /*Split(getTime(), ' ');
+  Split(getTime(), ' ');
   time_t baseTime =GetTimeT(Year,Month,Day,Hour,Minute,Second);
   String TimeS=ctime(&baseTime);
   char temp[30]={0};
@@ -134,17 +134,6 @@ void setup () {
     else{
       http.end();
     }
-  }*/
-  String subs[5]={"Gunshot","Machine Gun Fire","Speech","Artillerry Fire","Music"};
-  for(int i=0 ; i<5 ; i++){
-  delay(100);
-  char ch[120]={0};
-  display.clearDisplay();
-  //display.ssd1306_command (0xA1);
-  subs[i].toCharArray(ch, subs[i].length()+1);
-  EURK_putsxy(0, 48, ch);
-  display.display();
-  delay(7000);
   }
 }
 
