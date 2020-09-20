@@ -5,8 +5,10 @@
 #include <Adafruit_SSD1306.h>
 #include <Time.h>
 #include <stdlib.h>
+//#include <SoftwareSerial.h>
 using namespace std;
 
+//SoftwareSerial HM10(D5,D6); //RX,TX
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 #define OLED_RESET -1
@@ -21,23 +23,24 @@ WiFiClient client;
 
 void setup () {
   Serial.begin(115200);
-  WiFi.begin(ssid, password);
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  /*WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.println("Connecting...");
   }
+  Serial.println("Connected!");
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
     return;
-  }
+  }*/
   testfillcircle();
-  Split(getTime(), ' ');
+  delay(6000);
+  /*Split(getTime(), ' ');
   time_t baseTime =GetTimeT(Year,Month,Day,Hour,Minute,Second);
   String TimeS=ctime(&baseTime);
   char temp[30]={0};
-  Serial.println(TimeS);
   TimeS.toCharArray(temp, TimeS.length()+1);
   mktimeStamp(ctime(&baseTime), ' ');
-  Serial.println(DStamp.length());
   if(DStamp.length()==2)
   {
     YStamp=String(temp[20])+String(temp[21])+String(temp[22])+String(temp[23]);
@@ -57,22 +60,91 @@ void setup () {
   if(WiFi.status() == WL_CONNECTED)
   {
     HTTPClient http;
-    String ubidots = "http://164.125.219.21:3000/api/arduino";
-    http.begin(ubidots);
+    http.begin("http://164.125.219.21:3000/api/arduino");
     http.addHeader("Content-Type", "application/json; charset=utf-8");
     int httpCode = http.POST(output);
     Serial.println(httpCode);
     if (httpCode>0) {
       String payload = http.getString();
-      char ch[200]={0};
-      display.clearDisplay();
-      display.ssd1306_command (0xA1);
-      payload.toCharArray(ch, payload.length());
-      EURK_putsxy(0, 48, ch);
-      display.display();
       Serial.println(payload);
     }
     http.end();
+    delay(50);
+  }
+  while(WiFi.status() == WL_CONNECTED)
+  {
+    HTTPClient http;
+    http.begin("http://164.125.219.21:3000/api/beacon");
+    int httpCode = http.GET();
+    Serial.println(httpCode);
+    if (httpCode>0) {
+      String payload = http.getString();
+      StaticJsonDocument<600> JSONBuffer;
+      DeserializationError error = deserializeJson(JSONBuffer, payload);
+      if (error) {
+        Serial.print(F("deserializeJson() failed: "));
+        Serial.println(error.c_str());
+        return;
+      }
+      String tmp=JSONBuffer["result"];
+      Serial.println(tmp);
+      StaticJsonDocument<400> buff;
+      DeserializationError error2 = deserializeJson(buff, tmp);
+      if (error2) {
+        Serial.print(F("deserializeJson() failed: "));
+        Serial.println(error2.c_str());
+        return;
+      }
+      bool stat=buff["status"];
+      String test=buff["name"];
+      char ch[120]={0};
+          display.clearDisplay();
+          //display.ssd1306_command (0xA1);
+          payload.toCharArray(ch, test.length());
+          EURK_putsxy(0, 48, ch);
+          display.display();
+      Serial.println(stat);
+      if(stat)
+      {
+        http.end();
+        http.begin("http://164.125.219.21:3000/api/subtitles");
+        httpCode = http.GET();
+        Serial.println(httpCode);
+        if(httpCode>0) {
+          String subt = http.getString();
+          StaticJsonDocument<800> subs;
+          DeserializationError error3 = deserializeJson(subs, subt);
+          if (error3) {
+            Serial.print(F("deserializeJson() failed: "));
+            Serial.println(error3.c_str());
+            return;
+          }
+          String sub=subs["result"];
+          char ch[120]={0};
+          display.clearDisplay();
+          //display.ssd1306_command (0xA1);
+          payload.toCharArray(ch, sub.length());
+          EURK_putsxy(0, 48, ch);
+          display.display();
+          Serial.println(payload);
+        }
+        http.end();
+      }
+    }
+    else{
+      http.end();
+    }
+  }*/
+  String subs[5]={"Gunshot","Machine Gun Fire","Speech","Artillerry Fire","Music"};
+  for(int i=0 ; i<5 ; i++){
+  delay(100);
+  char ch[120]={0};
+  display.clearDisplay();
+  //display.ssd1306_command (0xA1);
+  subs[i].toCharArray(ch, subs[i].length()+1);
+  EURK_putsxy(0, 48, ch);
+  display.display();
+  delay(7000);
   }
 }
 
@@ -153,7 +225,6 @@ void mktimeStamp(String sData, char cSeparator)
     if(-1 != nGetIndex)
     {
       sTemp = sCopy.substring(0, nGetIndex);
-      Serial.println(sTemp);
       if(nCount==2)
       {
         DStamp=sTemp;
@@ -225,5 +296,6 @@ String getTime() {
 }
 
 void loop(){
-  delay(10000);
+  
+  delay(50);
 }
